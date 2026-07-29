@@ -16,6 +16,8 @@ screenshots:
     path: screenshots/centered.png
   - description: 'The bar docked to the bottom edge'
     path: screenshots/bottom.png
+  - description: 'A center-docked action button over the bar'
+    path: screenshots/docked_button.png
 
 environment:
   # withValues and Color.a, used for the glass tint, arrived in Flutter 3.27.
