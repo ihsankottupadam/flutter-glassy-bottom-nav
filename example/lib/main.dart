@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:glassy_bottom_nav/glassy_bottom_nav.dart';
 
+import 'demo_ui.dart';
+
 void main() => runApp(const ExampleApp());
 
 class ExampleApp extends StatelessWidget {
@@ -11,10 +13,32 @@ class ExampleApp extends StatelessWidget {
     return MaterialApp(
       title: 'glassy_bottom_nav',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: kBackground,
+        useMaterial3: true,
+      ),
       home: const HomePage(),
     );
   }
+}
+
+class _Destination {
+  const _Destination({
+    required this.title,
+    required this.label,
+    required this.icon,
+    required this.activeIcon,
+    required this.color,
+    required this.page,
+  });
+
+  final String title;
+  final String label;
+  final IconData icon;
+  final IconData activeIcon;
+  final Color color;
+  final Widget page;
 }
 
 class HomePage extends StatefulWidget {
@@ -35,28 +59,36 @@ class _HomePageState extends State<HomePage> {
 
   static const List<_Destination> _destinations = [
     _Destination(
+      title: 'Discover',
+      label: 'Home',
       icon: Icons.home_outlined,
       activeIcon: Icons.home_filled,
-      label: 'Home',
-      color: Colors.green,
+      color: Color(0xFF3DDC97),
+      page: DiscoverPage(),
     ),
     _Destination(
+      title: 'Favorites',
+      label: 'Favorite',
       icon: Icons.favorite_border,
       activeIcon: Icons.favorite,
-      label: 'Favorite',
-      color: Colors.red,
+      color: Color(0xFFFF4D8D),
+      page: FavoritesPage(),
     ),
     _Destination(
-      icon: Icons.book_outlined,
-      activeIcon: Icons.book,
+      title: 'Library',
       label: 'Books',
-      color: Colors.blue,
+      icon: Icons.menu_book_outlined,
+      activeIcon: Icons.menu_book_rounded,
+      color: Color(0xFF2E86FF),
+      page: LibraryPage(),
     ),
     _Destination(
-      icon: Icons.playlist_add,
-      activeIcon: Icons.playlist_add_check,
+      title: 'Playlist',
       label: 'Playlist',
-      color: Colors.pink,
+      icon: Icons.queue_music_outlined,
+      activeIcon: Icons.queue_music_rounded,
+      color: Color(0xFF9B5CFF),
+      page: PlaylistPage(),
     ),
   ];
 
@@ -70,50 +102,32 @@ class _HomePageState extends State<HomePage> {
     setState(() => _index = index);
     _pageController.animateToPage(
       index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Lets the body paint behind the bar, which is what gives the glass
+      // Lets the pages paint behind the bar, which is what gives the glass
       // something to blur.
       extendBody: true,
       body: Stack(
         children: [
-          const _Backdrop(),
+          const Positioned.fill(child: AmbientBackground()),
           PageView(
             controller: _pageController,
             onPageChanged: (index) => setState(() => _index = index),
             children: [
-              for (final destination in _destinations)
-                _Page(destination: destination),
+              for (final destination in _destinations) destination.page,
             ],
           ),
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: SegmentedButton<GlassyNavbarType>(
-                  segments: const [
-                    ButtonSegment(
-                      value: GlassyNavbarType.centered,
-                      label: Text('centered'),
-                    ),
-                    ButtonSegment(
-                      value: GlassyNavbarType.bottom,
-                      label: Text('bottom'),
-                    ),
-                  ],
-                  selected: {_navbarType},
-                  onSelectionChanged: (selection) =>
-                      setState(() => _navbarType = selection.first),
-                ),
-              ),
-            ),
+          const _TopScrim(),
+          _Header(
+            title: _destinations[_index].title,
+            navbarType: _navbarType,
+            onNavbarTypeChanged: (type) => setState(() => _navbarType = type),
           ),
         ],
       ),
@@ -122,10 +136,11 @@ class _HomePageState extends State<HomePage> {
         onChange: _goTo,
         navbarType: _navbarType,
         backgroundColor: Colors.black,
-        backgroundBlur: 20,
+        backgroundBlur: 22,
         borderThickness: 0.5,
-        borderColor: Colors.white.withValues(alpha: 0.15),
+        borderColor: Colors.white.withValues(alpha: 0.14),
         showUnselectedLabel: false,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
         items: [
           for (final destination in _destinations)
             GlassyBottomNavItem(
@@ -140,78 +155,136 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _Destination {
-  const _Destination({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final Color color;
-}
-
-/// The page behind the bar, deliberately busy so the blur has something to
-/// chew on.
-class _Page extends StatelessWidget {
-  const _Page({required this.destination});
-
-  final _Destination destination;
+/// Fades the pages out as they scroll up behind the header.
+class _TopScrim extends StatelessWidget {
+  const _TopScrim();
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 96, 16, 120),
-      itemCount: 12,
-      itemBuilder: (context, index) => Card(
-        color: destination.color.withValues(alpha: 0.25),
-        child: ListTile(
-          leading: Icon(destination.activeIcon),
-          title: Text('${destination.label} ${index + 1}'),
-          subtitle: const Text('Scroll me under the glass'),
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      height: MediaQuery.paddingOf(context).top + 76,
+      child: const IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [kBackground, Color(0x00000000)],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-/// Colour blobs on a dark gradient, so the bar has something to blur without
-/// the example needing an image asset.
-class _Backdrop extends StatelessWidget {
-  const _Backdrop();
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.title,
+    required this.navbarType,
+    required this.onNavbarTypeChanged,
+  });
+
+  final String title;
+  final GlassyNavbarType navbarType;
+  final ValueChanged<GlassyNavbarType> onNavbarTypeChanged;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1B1B2F), Color(0xFF3A1C4A), Color(0xFF102A43)],
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'GLASSY',
+                    style: TextStyle(
+                      color: kMuted,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 2.4,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: kText,
+                      fontSize: 23,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            _LayoutToggle(value: navbarType, onChanged: onNavbarTypeChanged),
+          ],
         ),
       ),
-      child: Stack(
+    );
+  }
+}
+
+/// Switches the bar between its two layouts.
+class _LayoutToggle extends StatelessWidget {
+  const _LayoutToggle({required this.value, required this.onChanged});
+
+  final GlassyNavbarType value;
+  final ValueChanged<GlassyNavbarType> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: kSurface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: kBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _blob(const Alignment(-0.8, -0.6), Colors.purple),
-          _blob(const Alignment(0.9, -0.2), Colors.teal),
-          _blob(const Alignment(-0.3, 0.9), Colors.orange),
+          for (final type in GlassyNavbarType.values)
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onChanged(type),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 13,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: type == value
+                      ? const Color(0x26FFFFFF)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  type.name,
+                  style: TextStyle(
+                    color: type == value ? kText : kMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
-
-  Widget _blob(Alignment alignment, Color color) => Align(
-    alignment: alignment,
-    child: Container(
-      width: 220,
-      height: 220,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withValues(alpha: 0.35),
-      ),
-    ),
-  );
 }

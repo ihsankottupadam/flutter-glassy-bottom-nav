@@ -7,8 +7,8 @@ per-item active colours and two layouts.
     <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/master/screenshots/bottom.png" width="300" alt="The bar docked to the bottom edge"></td>
   </tr>
   <tr>
-    <td align="center"><code>GlassyNavbarType.centered</code></td>
-    <td align="center"><code>GlassyNavbarType.bottom</code></td>
+    <td align="center"><code>GlassyNavbarType.centered</code> — a floating pill</td>
+    <td align="center"><code>GlassyNavbarType.bottom</code> — docked to the edge</td>
   </tr>
 </table>
 

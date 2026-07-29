@@ -1,17 +1,35 @@
 import 'package:example/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:glassy_bottom_nav/glassy_bottom_nav.dart';
 
 void main() {
-  testWidgets('tapping a destination moves the page', (tester) async {
+  testWidgets('tapping a destination moves the page and retitles the header', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ExampleApp());
 
-    expect(find.text('Home 1'), findsOneWidget);
+    expect(find.text('Discover'), findsOneWidget);
+    expect(find.text('Midnight Drive'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.book_outlined));
+    await tester.tap(find.byIcon(Icons.menu_book_outlined));
     await tester.pumpAndSettle();
 
-    expect(find.text('Books 1'), findsOneWidget);
-    expect(find.text('Books'), findsOneWidget);
+    expect(find.text('Library'), findsOneWidget);
+    expect(find.text('The Glass Atlas'), findsOneWidget);
+  });
+
+  testWidgets('the layout toggle switches the navbar type', (tester) async {
+    await tester.pumpWidget(const ExampleApp());
+
+    GlassyNavbarType navbarType() =>
+        tester.widget<GlassyBottomNav>(find.byType(GlassyBottomNav)).navbarType;
+
+    expect(navbarType(), GlassyNavbarType.centered);
+
+    await tester.tap(find.text('bottom'));
+    await tester.pumpAndSettle();
+
+    expect(navbarType(), GlassyNavbarType.bottom);
   });
 }
