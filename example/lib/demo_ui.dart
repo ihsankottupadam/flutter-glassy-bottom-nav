@@ -569,6 +569,9 @@ const List<(String, String, double)> _books = [
   ('Salt and Signal', 'M. Okonkwo', 0.28),
   ('Notes on Fog', 'Ines Brandt', 0.85),
   ('The Quiet Machine', 'Dara Finch', 0.14),
+  ('Harbour and Hollow', 'Nell Asante', 0.47),
+  ('A Field of Antennae', 'Yusuf Rahal', 0.73),
+  ('Twelve Small Fires', 'Bea Lindqvist', 0.05),
 ];
 
 class LibraryPage extends StatelessWidget {
