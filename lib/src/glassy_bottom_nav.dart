@@ -97,7 +97,8 @@ class GlassyBottomNav extends StatefulWidget {
 
   /// The style of the selected item's label.
   ///
-  /// Falls back to [labelStyle] when null.
+  /// Merged over [labelStyle], so it only needs to carry what differs while
+  /// the item is selected.
   final TextStyle? selectedLabelStyle;
 
   /// Whether the bar is docked to the bottom edge or floats as a pill.
@@ -133,16 +134,7 @@ class GlassyBottomNav extends StatefulWidget {
     this.navbarType = GlassyNavbarType.centered,
     this.markerSize = const Size(20, 3),
     this.duration = const Duration(milliseconds: 150),
-  }) : assert(items.length > 0, 'GlassyBottomNav needs at least one item.'),
-       assert(
-         initialIndex >= 0 && initialIndex < items.length,
-         'initialIndex must point at one of the items.',
-       ),
-       assert(
-         currentIndex == null ||
-             (currentIndex >= 0 && currentIndex < items.length),
-         'currentIndex must point at one of the items.',
-       );
+  });
 
   @override
   State<GlassyBottomNav> createState() => _GlassyBottomNavState();
@@ -153,6 +145,15 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
 
   /// The selection the bar tracks itself, unused while controlled.
   late int _internalIndex = widget.initialIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    assert(
+      widget.initialIndex >= 0 && widget.initialIndex < widget.items.length,
+      'initialIndex must point at one of the items.',
+    );
+  }
 
   /// The selected index, clamped in case the item list shrank.
   int get _currentIndex =>
@@ -173,6 +174,16 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
 
   @override
   Widget build(BuildContext context) {
+    // Checked here rather than in the constructor: a const constructor cannot
+    // evaluate items.length, which would rule out const GlassyBottomNav(...).
+    assert(widget.items.isNotEmpty, 'GlassyBottomNav needs at least one item.');
+    assert(
+      widget.currentIndex == null ||
+          (widget.currentIndex! >= 0 &&
+              widget.currentIndex! < widget.items.length),
+      'currentIndex must point at one of the items.',
+    );
+
     final borderRadius = widget.navbarType.resolveBorderRadius(
       widget.borderRadius,
     );
@@ -288,9 +299,10 @@ class _GlassyBottomNavItemView extends StatelessWidget {
 
   bool get _showLabel => isSelected ? showSelectedLabel : showUnselectedLabel;
 
-  TextStyle get _labelStyle => _defaultLabelStyle.merge(
-    isSelected ? selectedLabelStyle ?? labelStyle : labelStyle,
-  );
+  TextStyle get _labelStyle {
+    final style = _defaultLabelStyle.merge(labelStyle);
+    return isSelected ? style.merge(selectedLabelStyle) : style;
+  }
 
   @override
   Widget build(BuildContext context) {
