@@ -11,6 +11,10 @@ topics:
   - glassmorphism
   - blur
 
+screenshots:
+  - description: 'The centered pill layout and the bottom-docked layout'
+    path: screenshots/glassy_bottom_nav.png
+
 environment:
   # withValues and Color.a, used for the glass tint, arrived in Flutter 3.27.
   sdk: '>=3.6.0 <4.0.0'
