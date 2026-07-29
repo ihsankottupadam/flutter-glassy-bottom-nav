@@ -12,8 +12,10 @@ topics:
   - blur
 
 screenshots:
-  - description: 'The centered pill layout and the bottom-docked layout'
-    path: screenshots/glassy_bottom_nav.png
+  - description: 'The bar floating as a pill above the bottom edge'
+    path: screenshots/centered.png
+  - description: 'The bar docked to the bottom edge'
+    path: screenshots/bottom.png
 
 environment:
   # withValues and Color.a, used for the glass tint, arrived in Flutter 3.27.

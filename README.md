@@ -1,7 +1,16 @@
 A frosted-glass bottom navigation bar, with an animated selection indicator,
 per-item active colours and two layouts.
 
-![The centered pill layout and the bottom-docked layout, blurring the content behind them](https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/master/screenshots/glassy_bottom_nav.png)
+<table>
+  <tr>
+    <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/master/screenshots/centered.png" width="300" alt="The bar floating as a pill above the bottom edge"></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/master/screenshots/bottom.png" width="300" alt="The bar docked to the bottom edge"></td>
+  </tr>
+  <tr>
+    <td align="center"><code>GlassyNavbarType.centered</code></td>
+    <td align="center"><code>GlassyNavbarType.bottom</code></td>
+  </tr>
+</table>
 
 ## Features
 
