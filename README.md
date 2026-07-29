@@ -3,9 +3,9 @@ per-item active colours and two layouts.
 
 <table>
   <tr>
-    <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/master/screenshots/centered.png" width="250" alt="The bar floating as a pill above the bottom edge"></td>
-    <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/master/screenshots/bottom.png" width="250" alt="The bar docked to the bottom edge"></td>
-    <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/master/screenshots/docked_button.png" width="250" alt="A center-docked action button over the bar on the Books destination"></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/main/screenshots/centered.png" width="250" alt="The bar floating as a pill above the bottom edge"></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/main/screenshots/bottom.png" width="250" alt="The bar docked to the bottom edge"></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/main/screenshots/docked_button.png" width="250" alt="A center-docked action button over the bar on the Books destination"></td>
   </tr>
   <tr>
     <td align="center"><code>GlassyNavbarType.centered</code><br>a floating pill</td>
