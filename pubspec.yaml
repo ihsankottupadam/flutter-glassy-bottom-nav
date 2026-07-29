@@ -1,11 +1,20 @@
 name: glassy_bottom_nav
-description: "A new Flutter package project."
-version: 0.0.1
-homepage:
+description: A frosted-glass bottom navigation bar with an animated selection indicator, per-item active colours and two layouts.
+version: 1.0.0
+homepage: https://github.com/ihsankottupadam/flutter-glassy-bottom-nav
+repository: https://github.com/ihsankottupadam/flutter-glassy-bottom-nav
+issue_tracker: https://github.com/ihsankottupadam/flutter-glassy-bottom-nav/issues
+
+topics:
+  - bottom-navigation
+  - navigation-bar
+  - glassmorphism
+  - blur
 
 environment:
-  sdk: ^3.12.2
-  flutter: ">=1.17.0"
+  # withValues and Color.a, used for the glass tint, arrived in Flutter 3.27.
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: ">=3.27.0"
 
 dependencies:
   flutter:
