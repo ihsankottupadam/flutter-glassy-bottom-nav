@@ -157,5 +157,7 @@ GlassyBottomNav(
 
 ## Example
 
-See [`example/`](example) for a four-destination app that switches between
-both layouts and drives the bar from a `PageController`.
+See [`example/`](example) for a four-destination app that drives the bar from
+a `PageController`. Its header has two switches: one flips between the layouts,
+the other docks a `FloatingActionButtonLocation.centerDocked` button over the
+bar, which works with either layout.

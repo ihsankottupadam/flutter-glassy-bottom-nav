@@ -32,4 +32,21 @@ void main() {
 
     expect(navbarType(), GlassyNavbarType.bottom);
   });
+
+  testWidgets('the option button docks a button over the bar', (tester) async {
+    await tester.pumpWidget(const ExampleApp());
+
+    expect(find.byIcon(Icons.add_rounded), findsNothing);
+
+    await tester.tap(find.byTooltip('Center-docked button'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+
+    // Docked over the centre of the bar.
+    final button = tester.getCenter(find.byIcon(Icons.add_rounded));
+    final bar = tester.getCenter(find.byType(GlassyBottomNav));
+    expect(button.dx, moreOrLessEquals(bar.dx, epsilon: 0.5));
+    expect(button.dy, lessThan(bar.dy));
+  });
 }

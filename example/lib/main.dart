@@ -57,6 +57,10 @@ class _HomePageState extends State<HomePage> {
 
   GlassyNavbarType _navbarType = GlassyNavbarType.centered;
 
+  /// The bar leaves room for a [FloatingActionButtonLocation.centerDocked]
+  /// button, so the example can show one docked over either layout.
+  bool _showActionButton = false;
+
   static const List<_Destination> _destinations = [
     _Destination(
       title: 'Discover',
@@ -128,9 +132,16 @@ class _HomePageState extends State<HomePage> {
             title: _destinations[_index].title,
             navbarType: _navbarType,
             onNavbarTypeChanged: (type) => setState(() => _navbarType = type),
+            showActionButton: _showActionButton,
+            onShowActionButtonChanged: (show) =>
+                setState(() => _showActionButton = show),
           ),
         ],
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: _showActionButton
+          ? const _CenterDockedButton()
+          : null,
       bottomNavigationBar: GlassyBottomNav(
         currentIndex: _index,
         onChange: _goTo,
@@ -186,11 +197,15 @@ class _Header extends StatelessWidget {
     required this.title,
     required this.navbarType,
     required this.onNavbarTypeChanged,
+    required this.showActionButton,
+    required this.onShowActionButtonChanged,
   });
 
   final String title;
   final GlassyNavbarType navbarType;
   final ValueChanged<GlassyNavbarType> onNavbarTypeChanged;
+  final bool showActionButton;
+  final ValueChanged<bool> onShowActionButtonChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -229,9 +244,95 @@ class _Header extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
+            _OptionButton(
+              icon: Icons.add_circle_outline_rounded,
+              tooltip: 'Center-docked button',
+              selected: showActionButton,
+              onTap: () => onShowActionButtonChanged(!showActionButton),
+            ),
+            const SizedBox(width: 8),
             _LayoutToggle(value: navbarType, onChanged: onNavbarTypeChanged),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A round glass switch for a single on/off demo option.
+class _OptionButton extends StatelessWidget {
+  const _OptionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: selected ? const Color(0x337A5CFF) : kSurface,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: selected ? const Color(0xFF7A5CFF) : kBorder,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: selected ? const Color(0xFFB9A6FF) : kMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A [FloatingActionButtonLocation.centerDocked] button, to show that one
+/// still sits correctly over either navbar layout.
+class _CenterDockedButton extends StatelessWidget {
+  const _CenterDockedButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      child: Container(
+        width: 58,
+        height: 58,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF7A5CFF), Color(0xFFFF4D8D)],
+          ),
+          border: Border.all(color: const Color(0x2EFFFFFF)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7A5CFF).withValues(alpha: 0.45),
+              blurRadius: 22,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Icon(Icons.add_rounded, color: Colors.white, size: 28),
         ),
       ),
     );
