@@ -30,7 +30,17 @@ class GlassyBottomNav extends StatefulWidget {
   final List<GlassyBottomNavItem> items;
 
   /// The index selected when the bar is first built.
+  ///
+  /// Ignored when [currentIndex] is given.
   final int initialIndex;
+
+  /// The selected index, when the selection is driven from outside.
+  ///
+  /// Leave this null to let the bar track the selection itself. Setting it
+  /// puts the bar in controlled mode: taps only report through [onChange] and
+  /// the selection moves when a new [currentIndex] is passed in, which is what
+  /// you want when a [PageController] or a router owns the current page.
+  final int? currentIndex;
 
   /// Called with the new index whenever a different item is tapped.
   ///
@@ -93,11 +103,20 @@ class GlassyBottomNav extends StatefulWidget {
   /// Whether the bar is docked to the bottom edge or floats as a pill.
   final GlassyNavbarType navbarType;
 
+  /// The size of the marker drawn above the selected item's icon.
+  ///
+  /// The marker animates from zero width to [Size.width] on selection.
+  final Size markerSize;
+
+  /// How long the indicator and the marker take to animate between items.
+  final Duration duration;
+
   /// Creates a frosted-glass bottom navigation bar.
   const GlassyBottomNav({
     super.key,
     required this.items,
     this.initialIndex = 0,
+    this.currentIndex,
     this.onChange,
     this.borderRadius,
     this.margin,
@@ -112,17 +131,32 @@ class GlassyBottomNav extends StatefulWidget {
     this.labelStyle,
     this.selectedLabelStyle,
     this.navbarType = GlassyNavbarType.centered,
-  }) : assert(items.length > 0, 'GlassyBottomNav needs at least one item.');
+    this.markerSize = const Size(20, 3),
+    this.duration = const Duration(milliseconds: 150),
+  }) : assert(items.length > 0, 'GlassyBottomNav needs at least one item.'),
+       assert(
+         initialIndex >= 0 && initialIndex < items.length,
+         'initialIndex must point at one of the items.',
+       ),
+       assert(
+         currentIndex == null ||
+             (currentIndex >= 0 && currentIndex < items.length),
+         'currentIndex must point at one of the items.',
+       );
 
   @override
   State<GlassyBottomNav> createState() => _GlassyBottomNavState();
 }
 
 class _GlassyBottomNavState extends State<GlassyBottomNav> {
-  static const Duration _animationDuration = Duration(milliseconds: 150);
   static const Color _defaultBorderColor = Color(0x88ffffff);
 
-  late int _currentIndex = widget.initialIndex;
+  /// The selection the bar tracks itself, unused while controlled.
+  late int _internalIndex = widget.initialIndex;
+
+  /// The selected index, clamped in case the item list shrank.
+  int get _currentIndex =>
+      (widget.currentIndex ?? _internalIndex).clamp(0, widget.items.length - 1);
 
   /// The colour that tints an item's marker, and the indicator while that
   /// item is selected.
@@ -131,7 +165,9 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
 
   void _onTap(int index) {
     if (_currentIndex == index) return;
-    setState(() => _currentIndex = index);
+    if (widget.currentIndex == null) {
+      setState(() => _internalIndex = index);
+    }
     widget.onChange?.call(index);
   }
 
@@ -156,9 +192,9 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
                     width: itemWidth,
                     top: 0,
                     bottom: 0,
-                    duration: _animationDuration,
+                    duration: widget.duration,
                     child: AnimatedContainer(
-                      duration: _animationDuration,
+                      duration: widget.duration,
                       color: _activeColorOf(
                         widget.items[_currentIndex],
                       ).withValues(alpha: 0.5),
@@ -199,7 +235,8 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
                                       widget.showUnselectedLabel,
                                   labelStyle: widget.labelStyle,
                                   selectedLabelStyle: widget.selectedLabelStyle,
-                                  animationDuration: _animationDuration,
+                                  markerSize: widget.markerSize,
+                                  animationDuration: widget.duration,
                                 ),
                               ),
                             ),
@@ -227,6 +264,7 @@ class _GlassyBottomNavItemView extends StatelessWidget {
     required this.showSelectedLabel,
     required this.labelStyle,
     required this.selectedLabelStyle,
+    required this.markerSize,
     required this.animationDuration,
   });
 
@@ -243,6 +281,7 @@ class _GlassyBottomNavItemView extends StatelessWidget {
   final bool showSelectedLabel;
   final TextStyle? labelStyle;
   final TextStyle? selectedLabelStyle;
+  final Size markerSize;
   final Duration animationDuration;
 
   Widget get _icon => isSelected ? item.activeIcon ?? item.icon : item.icon;
@@ -260,8 +299,8 @@ class _GlassyBottomNavItemView extends StatelessWidget {
       children: [
         AnimatedContainer(
           duration: animationDuration,
-          width: isSelected ? 20 : 0,
-          height: 3,
+          width: isSelected ? markerSize.width : 0,
+          height: markerSize.height,
           color: activeColor,
         ),
         const SizedBox(height: 10),
