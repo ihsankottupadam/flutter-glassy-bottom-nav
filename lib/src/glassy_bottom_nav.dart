@@ -79,6 +79,17 @@ class GlassyBottomNav extends StatefulWidget {
   /// Whether the selected item shows its label.
   final bool showSelectedLabel;
 
+  /// The style of the labels.
+  ///
+  /// Merged over the default, which is white 12px text that fades when it
+  /// overflows.
+  final TextStyle? labelStyle;
+
+  /// The style of the selected item's label.
+  ///
+  /// Falls back to [labelStyle] when null.
+  final TextStyle? selectedLabelStyle;
+
   /// Whether the bar is docked to the bottom edge or floats as a pill.
   final GlassyNavbarType navbarType;
 
@@ -98,6 +109,8 @@ class GlassyBottomNav extends StatefulWidget {
     this.showBackgroundIndicator = true,
     this.showUnselectedLabel = true,
     this.showSelectedLabel = true,
+    this.labelStyle,
+    this.selectedLabelStyle,
     this.navbarType = GlassyNavbarType.centered,
   }) : assert(items.length > 0, 'GlassyBottomNav needs at least one item.');
 
@@ -111,9 +124,10 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
 
   late int _currentIndex = widget.initialIndex;
 
-  Color get _activeColor =>
-      widget.items[_currentIndex].activeColor ??
-      Theme.of(context).colorScheme.secondary;
+  /// The colour that tints an item's marker, and the indicator while that
+  /// item is selected.
+  Color _activeColorOf(GlassyBottomNavItem item) =>
+      item.activeColor ?? Theme.of(context).colorScheme.secondary;
 
   void _onTap(int index) {
     if (_currentIndex == index) return;
@@ -145,7 +159,9 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
                     duration: _animationDuration,
                     child: AnimatedContainer(
                       duration: _animationDuration,
-                      color: _activeColor.withValues(alpha: 0.5),
+                      color: _activeColorOf(
+                        widget.items[_currentIndex],
+                      ).withValues(alpha: 0.5),
                     ),
                   ),
                 BackdropFilter(
@@ -177,9 +193,12 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
                                 child: _GlassyBottomNavItemView(
                                   item: item,
                                   isSelected: index == _currentIndex,
+                                  activeColor: _activeColorOf(item),
                                   showSelectedLabel: widget.showSelectedLabel,
                                   showUnselectedLabel:
                                       widget.showUnselectedLabel,
+                                  labelStyle: widget.labelStyle,
+                                  selectedLabelStyle: widget.selectedLabelStyle,
                                   animationDuration: _animationDuration,
                                 ),
                               ),
@@ -203,20 +222,36 @@ class _GlassyBottomNavItemView extends StatelessWidget {
   const _GlassyBottomNavItemView({
     required this.item,
     required this.isSelected,
+    required this.activeColor,
     required this.showUnselectedLabel,
     required this.showSelectedLabel,
+    required this.labelStyle,
+    required this.selectedLabelStyle,
     required this.animationDuration,
   });
 
+  static const TextStyle _defaultLabelStyle = TextStyle(
+    color: Colors.white,
+    fontSize: 12,
+    overflow: TextOverflow.fade,
+  );
+
   final GlassyBottomNavItem item;
   final bool isSelected;
+  final Color activeColor;
   final bool showUnselectedLabel;
   final bool showSelectedLabel;
+  final TextStyle? labelStyle;
+  final TextStyle? selectedLabelStyle;
   final Duration animationDuration;
 
   Widget get _icon => isSelected ? item.activeIcon ?? item.icon : item.icon;
 
   bool get _showLabel => isSelected ? showSelectedLabel : showUnselectedLabel;
+
+  TextStyle get _labelStyle => _defaultLabelStyle.merge(
+    isSelected ? selectedLabelStyle ?? labelStyle : labelStyle,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +262,7 @@ class _GlassyBottomNavItemView extends StatelessWidget {
           duration: animationDuration,
           width: isSelected ? 20 : 0,
           height: 3,
-          color: item.activeColor ?? Colors.green,
+          color: activeColor,
         ),
         const SizedBox(height: 10),
         Opacity(
@@ -236,15 +271,7 @@ class _GlassyBottomNavItemView extends StatelessWidget {
             children: [
               _icon,
               const SizedBox(height: 5),
-              if (_showLabel)
-                Text(
-                  item.label,
-                  maxLines: 1,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    overflow: TextOverflow.fade,
-                  ),
-                ),
+              if (_showLabel) Text(item.label, maxLines: 1, style: _labelStyle),
             ],
           ),
         ),
