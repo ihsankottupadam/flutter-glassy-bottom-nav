@@ -40,9 +40,9 @@ IconData unselectedIconOf(int index) => (items[index].icon as Icon).icon!;
 extension PumpNav on WidgetTester {
   /// Pumps [nav] as the bottom bar of a plain dark-themed app.
   Future<void> pumpNav(GlassyBottomNav nav) => pumpWidget(
-    MaterialApp(
-      theme: ThemeData(brightness: Brightness.dark),
-      home: Scaffold(extendBody: true, bottomNavigationBar: nav),
-    ),
-  );
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.dark),
+          home: Scaffold(extendBody: true, bottomNavigationBar: nav),
+        ),
+      );
 }

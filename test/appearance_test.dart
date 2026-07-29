@@ -6,27 +6,26 @@ import 'helpers.dart';
 
 /// The outermost widget of the given type inside the bar.
 T _firstInNav<T extends Widget>(WidgetTester tester) => tester.widget<T>(
-  find
-      .descendant(of: find.byType(GlassyBottomNav), matching: find.byType(T))
-      .first,
-);
+      find
+          .descendant(
+              of: find.byType(GlassyBottomNav), matching: find.byType(T))
+          .first,
+    );
 
 /// The decoration of the glass panel itself.
 ///
 /// Scoped to the [BackdropFilter], since the indicator's [AnimatedContainer]
 /// also builds a [Container] and sits earlier in the tree.
-BoxDecoration _glassDecoration(WidgetTester tester) =>
-    tester
-            .widget<Container>(
-              find
-                  .descendant(
-                    of: find.byType(BackdropFilter),
-                    matching: find.byType(Container),
-                  )
-                  .first,
-            )
-            .decoration!
-        as BoxDecoration;
+BoxDecoration _glassDecoration(WidgetTester tester) => tester
+    .widget<Container>(
+      find
+          .descendant(
+            of: find.byType(BackdropFilter),
+            matching: find.byType(Container),
+          )
+          .first,
+    )
+    .decoration! as BoxDecoration;
 
 void main() {
   group('background indicator', () {
@@ -36,8 +35,7 @@ void main() {
       await tester.pumpNav(const GlassyBottomNav(items: items));
       await tester.pumpAndSettle();
 
-      final itemWidth =
-          tester
+      final itemWidth = tester
               .getSize(
                 find
                     .descendant(
