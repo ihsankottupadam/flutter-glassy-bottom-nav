@@ -49,6 +49,48 @@ Skia build. The fallback costs nothing to design because this package
 already ships it as its main product, which is the structural reason the
 style belongs here rather than in a package that would have to invent one.
 
+### What the caller writes
+
+One parameter, and nothing else moves. The default is `frosted`, so a 1.x
+caller who asks for nothing keeps exactly the bar they have:
+
+```dart
+// Frosted: what ships today, and still the default.
+GlassyBottomNav(
+  items: items,
+  onChange: (index) => setState(() => _index = index),
+)
+
+// Liquid: the same blur, with the rim refracting what is behind it.
+GlassyBottomNav(
+  glassStyle: GlassStyle.liquid,
+  items: items,
+  onChange: (index) => setState(() => _index = index),
+)
+```
+
+There is no capability check for the caller to write, no `await` before the
+first frame and no second widget to swap in. Asking for `liquid` on a
+backend that cannot run it is not an error and does not throw — the widget
+resolves it down and draws frosted:
+
+```dart
+GlassStyle get _resolvedStyle =>
+    widget.glassStyle == GlassStyle.liquid &&
+            ui.ImageFilter.isShaderFilterSupported
+        ? GlassStyle.liquid
+        : GlassStyle.frosted;
+```
+
+So `glassStyle: GlassStyle.liquid` is safe to write unconditionally, in an
+app that also runs on the web. That is the whole point of the style being a
+parameter on this widget rather than a different widget: the fallback is
+not something the caller arranges, it is what the package already draws.
+
+Phase 4 decides which of the tuning knobs — band width, refraction amount,
+the specular highlight — are worth exposing at all. Whatever survives
+arrives with tuned defaults, so the line above stays the common case.
+
 ## Declined
 
 - **Apple's `UIGlassEffect` in a platform view**, as `real_liquid_glass` and
