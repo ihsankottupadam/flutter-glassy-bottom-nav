@@ -59,6 +59,10 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Probe only -- see lib/probe_main.dart. Not part of the package.
+  shaders:
+    - shaders/liquid_glass_probe.frag
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
