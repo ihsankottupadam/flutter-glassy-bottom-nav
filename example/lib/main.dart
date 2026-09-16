@@ -57,6 +57,8 @@ class _HomePageState extends State<HomePage> {
 
   GlassyNavbarType _navbarType = GlassyNavbarType.centered;
 
+  GlassStyle _glassStyle = GlassStyle.frosted;
+
   /// The bar leaves room for a [FloatingActionButtonLocation.centerDocked]
   /// button, so the example can show one docked over either layout.
   bool _showActionButton = false;
@@ -132,6 +134,8 @@ class _HomePageState extends State<HomePage> {
             title: _destinations[_index].title,
             navbarType: _navbarType,
             onNavbarTypeChanged: (type) => setState(() => _navbarType = type),
+            glassStyle: _glassStyle,
+            onGlassStyleChanged: (style) => setState(() => _glassStyle = style),
             showActionButton: _showActionButton,
             onShowActionButtonChanged: (show) =>
                 setState(() => _showActionButton = show),
@@ -146,6 +150,7 @@ class _HomePageState extends State<HomePage> {
         currentIndex: _index,
         onChange: _goTo,
         navbarType: _navbarType,
+        glassStyle: _glassStyle,
         backgroundColor: Colors.black,
         backgroundBlur: 22,
         borderThickness: 0.5,
@@ -197,6 +202,8 @@ class _Header extends StatelessWidget {
     required this.title,
     required this.navbarType,
     required this.onNavbarTypeChanged,
+    required this.glassStyle,
+    required this.onGlassStyleChanged,
     required this.showActionButton,
     required this.onShowActionButtonChanged,
   });
@@ -204,6 +211,8 @@ class _Header extends StatelessWidget {
   final String title;
   final GlassyNavbarType navbarType;
   final ValueChanged<GlassyNavbarType> onNavbarTypeChanged;
+  final GlassStyle glassStyle;
+  final ValueChanged<GlassStyle> onGlassStyleChanged;
   final bool showActionButton;
   final ValueChanged<bool> onShowActionButtonChanged;
 
@@ -245,6 +254,19 @@ class _Header extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
+            _OptionButton(
+              icon: Icons.water_drop_outlined,
+              tooltip: glassStyle == GlassStyle.liquid
+                  ? 'Liquid glass'
+                  : 'Frosted glass',
+              selected: glassStyle == GlassStyle.liquid,
+              onTap: () => onGlassStyleChanged(
+                glassStyle == GlassStyle.liquid
+                    ? GlassStyle.frosted
+                    : GlassStyle.liquid,
+              ),
+            ),
+            const SizedBox(width: 8),
             _OptionButton(
               icon: Icons.add_circle_outline_rounded,
               tooltip: 'Center-docked button',

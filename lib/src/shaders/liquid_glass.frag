@@ -24,13 +24,22 @@ precision highp float;
 uniform vec2 uTextureSize;
 
 uniform vec4 uBarRect;     // left, top, right, bottom, in device pixels
-uniform float uRadius;     // corner radius, device pixels
+uniform vec4 uCornerRadii; // topLeft, topRight, bottomRight, bottomLeft
 uniform float uBandWidth;  // how far in from the edge the bending reaches
 uniform float uAmount;     // how far the sampled pixels travel
 
 uniform sampler2D uContent;
 
 out vec4 fragColor;
+
+/// The radius of whichever corner [p] is nearest, [p] being centred on the
+/// shape. GlassyNavbarType.bottom rounds only its top corners, so one radius
+/// for the whole rect would refract a curve the bar does not have.
+float radiusAt(vec2 p, vec4 radii) {
+    return p.x < 0.0
+        ? (p.y < 0.0 ? radii.x : radii.w)
+        : (p.y < 0.0 ? radii.y : radii.z);
+}
 
 float sdRoundedRect(vec2 p, vec2 halfSize, float r) {
     vec2 q = abs(p) - halfSize + r;
@@ -61,7 +70,8 @@ void main() {
     vec2 halfSize = (uBarRect.zw - uBarRect.xy) * 0.5;
     vec2 p = frag - center;
 
-    float sd = sdRoundedRect(p, halfSize, uRadius);
+    float radius = radiusAt(p, uCornerRadii);
+    float sd = sdRoundedRect(p, halfSize, radius);
 
     // Outside the bar, and inside its untouched middle: one read, no work.
     if (sd > 0.0 || -sd >= uBandWidth) {
@@ -74,5 +84,5 @@ void main() {
     float t = 1.0 - (-sd / uBandWidth);
     float d = (1.0 - sqrt(max(0.0, 1.0 - t * t))) * uAmount;
 
-    fragColor = sampleAt(frag - d * gradSdRoundedRect(p, halfSize, uRadius));
+    fragColor = sampleAt(frag - d * gradSdRoundedRect(p, halfSize, radius));
 }

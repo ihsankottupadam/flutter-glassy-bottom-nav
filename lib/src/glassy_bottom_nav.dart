@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'glass_style.dart';
 import 'glassy_bottom_nav_item.dart';
+import 'liquid_glass_shader.dart';
 import 'glassy_navbar_type.dart';
 
 /// A frosted-glass bottom navigation bar.
@@ -154,6 +155,26 @@ class GlassyBottomNav extends StatefulWidget {
 class _GlassyBottomNavState extends State<GlassyBottomNav> {
   static const Color _defaultBorderColor = Color(0x88ffffff);
 
+  /// How far in from the edge [GlassStyle.liquid] bends the backdrop, and
+  /// how far the bent pixels travel, both in logical pixels.
+  ///
+  /// Not yet exposed: Phase 4 of plans/plan-liquid-glass.md tunes these
+  /// against the example and decides which of them a caller ever needs.
+  static const double _bandWidth = 14;
+  static const double _refractionAmount = 12;
+
+  /// The glass panel, so its rect can be read back after layout.
+  final GlobalKey _panelKey = GlobalKey();
+
+  /// The panel's rect in global logical pixels, or null before the first
+  /// frame has been laid out.
+  ///
+  /// Measured rather than recomputed from [GlassyBottomNav.margin] and the
+  /// navbar type: a caller may pass any margin, and the [Scaffold] adds
+  /// insets of its own, so the only rect certain to be the one on screen is
+  /// the one the render object reports.
+  Rect? _panelRect;
+
   /// The selection the bar tracks itself, unused while controlled.
   late int _internalIndex = widget.initialIndex;
 
@@ -176,6 +197,62 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
   /// Everything that draws differently per style reads this rather than
   /// `widget.glassStyle`, so the fallback is decided in one place.
   GlassStyle get _resolvedStyle => widget.glassStyle.resolved;
+
+  /// Reads the panel's rect back after a frame, and rebuilds if it moved.
+  ///
+  /// The refraction is a frame behind the geometry, which shows only while
+  /// the bar is changing size — a rotation, a window drag. The alternative
+  /// is a custom render object built to hand its own paint-time position to
+  /// a filter, which is a great deal of machinery for one frame during a
+  /// resize.
+  void _measurePanel() {
+    final RenderObject? object = _panelKey.currentContext?.findRenderObject();
+    if (object is! RenderBox || !object.hasSize || !object.attached) return;
+    final Rect rect = object.localToGlobal(Offset.zero) & object.size;
+    if (rect == _panelRect) return;
+    setState(() => _panelRect = rect);
+  }
+
+  /// Makes sure the shader is compiling, and rebuilds when it arrives.
+  void _ensureShader() {
+    if (LiquidGlassShader.program != null || LiquidGlassShader.failed) return;
+    LiquidGlassShader.load().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  /// The refraction filter, or null whenever the bar should not draw one —
+  /// the style resolved to frosted, the shader has not compiled yet, or the
+  /// panel has not been measured. Each of those draws the frosted bar for
+  /// this frame rather than holding it up.
+  ImageFilter? _refraction(BorderRadius borderRadius) {
+    if (_resolvedStyle != GlassStyle.liquid) return null;
+
+    final FragmentProgram? program = LiquidGlassShader.program;
+    final Rect? rect = _panelRect;
+    if (program == null || rect == null) return null;
+
+    // Everything the shader is told is in device pixels, because
+    // FlutterFragCoord() is.
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    final FragmentShader shader = program.fragmentShader();
+    shader
+      // Floats 0 and 1 are uTextureSize, which the engine overwrites with
+      // the size of the texture it binds.
+      ..setFloat(0, 0)
+      ..setFloat(1, 0)
+      ..setFloat(2, rect.left * dpr)
+      ..setFloat(3, rect.top * dpr)
+      ..setFloat(4, rect.right * dpr)
+      ..setFloat(5, rect.bottom * dpr)
+      ..setFloat(6, borderRadius.topLeft.x * dpr)
+      ..setFloat(7, borderRadius.topRight.x * dpr)
+      ..setFloat(8, borderRadius.bottomRight.x * dpr)
+      ..setFloat(9, borderRadius.bottomLeft.x * dpr)
+      ..setFloat(10, _bandWidth * dpr)
+      ..setFloat(11, _refractionAmount * dpr);
+    return ImageFilter.shader(shader);
+  }
 
   /// The colour that tints an item's marker, and the indicator while that
   /// item is selected.
@@ -223,6 +300,15 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
       widget.borderRadius,
     );
 
+    // Both are no-ops while the bar is frosted, which is what keeps a
+    // frosted bar from touching the shader asset or scheduling callbacks.
+    if (_resolvedStyle == GlassStyle.liquid) {
+      _ensureShader();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measurePanel());
+    }
+
+    final ImageFilter? refraction = _refraction(borderRadius);
+
     return Padding(
       padding: widget.margin ?? widget.navbarType.defaultMargin,
       child: ClipRRect(
@@ -231,6 +317,7 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
           builder: (context, constraints) {
             final itemWidth = constraints.maxWidth / widget.items.length;
             return Stack(
+              key: _panelKey,
               children: [
                 if (widget.showBackgroundIndicator)
                   AnimatedPositioned(
@@ -291,6 +378,22 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
                     ),
                   ),
                 ),
+                // The rim refraction, above the blur so that what it
+                // bends is already blurred, and positioned so it does not
+                // take part in the Stack's sizing. It covers the panel
+                // rather than the screen, because a bar handed to
+                // Scaffold.bottomNavigationBar has no way to paint outside
+                // its own box -- and it does not need to, since the bend
+                // samples inwards from the edge.
+                if (refraction != null)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: BackdropFilter(
+                        filter: refraction,
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  ),
               ],
             );
           },
