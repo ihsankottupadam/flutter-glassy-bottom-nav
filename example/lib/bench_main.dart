@@ -32,9 +32,9 @@
 // correlated -- the interesting variance is between batches and between
 // rounds, and a single mean over 600 frames hides both.
 //
-// Throwaway, like `probe_main.dart`: it is committed so the numbers in
-// `doc/research/plan-liquid-glass.md` can be reproduced, not because the
-// package needs it.
+// Throwaway, like `probe_main.dart`: it is committed so the raster-time
+// figures quoted in the 1.1.0 release notes can be reproduced, not because
+// the package needs it.
 
 import 'dart:async';
 import 'dart:math' as math;

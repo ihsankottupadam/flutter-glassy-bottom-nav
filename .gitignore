@@ -30,5 +30,6 @@ migrate_working_dir/
 /build/
 /coverage/
 
-# Plan files are kept locally, not in the repository.
+# Plan files and research notes are kept locally, not in the repository.
 plans/
+doc/

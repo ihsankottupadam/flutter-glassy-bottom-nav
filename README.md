@@ -165,31 +165,6 @@ Two things worth knowing about how it looks:
 The rim has no settings of its own. Band width, refraction distance and the
 highlight were tuned as a set and only read as glass in combination.
 
-### What it costs
-
-Measured on a Redmi 13 5G (Snapdragon 4 Gen 2) at 60 Hz, a profile build,
-with the content behind the bar repainting every single frame — the worst
-case, since nothing can be cached:
-
-| | GPU raster per frame |
-| --- | --- |
-| no filter behind the bar | 7.2 ms |
-| `GlassStyle.frosted` | 17.0 ms |
-| `GlassStyle.liquid` | 19.9 ms |
-
-**The blur is the expensive part, not the refraction.** Liquid adds 17% on
-top of frosted; frosted adds nearly ten milliseconds over drawing no glass
-at all. If a bar is too expensive on a device, the first thing to reach for
-is a lower `backgroundBlur`, not a different `glassStyle`.
-
-Those are ceilings, not typical frames. An app whose content behind the bar
-is still — most apps, most of the time — lets the raster cache keep the
-filtered layer and pays this only while something scrolls.
-
-There is no device-tier check inside the package, deliberately: it would be
-gating the cheap part of the cost. `glassStyle` is an ordinary parameter, so
-an app that wants to make that call can wire it to its own quality setting.
-
 ## Styling the glass
 
 ```dart
