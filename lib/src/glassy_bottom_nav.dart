@@ -158,10 +158,24 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
   /// How far in from the edge [GlassStyle.liquid] bends the backdrop, and
   /// how far the bent pixels travel, both in logical pixels.
   ///
-  /// Not yet exposed: Phase 4 of plans/plan-liquid-glass.md tunes these
-  /// against the example and decides which of them a caller ever needs.
-  static const double _bandWidth = 14;
-  static const double _refractionAmount = 12;
+  /// Deliberately not exposed. These were tuned together against the example
+  /// over artwork, and they only read as glass in combination: more travel
+  /// than this inflates the bar into a fisheye, less makes it
+  /// indistinguishable from [GlassStyle.frosted]. A caller who wants the rim
+  /// to read differently has [backgroundBlur], which decides how much detail
+  /// survives to be bent, and that is the control that answers the question
+  /// people actually ask. Adding a parameter later is not a breaking change;
+  /// taking one back is.
+  static const double _bandWidth = 12;
+  static const double _refractionAmount = 8;
+
+  /// How thick the lit edge is, and how much light it catches.
+  ///
+  /// Unexposed for the same reason. Wider or brighter than this stops
+  /// reading as light caught on an edge and starts reading as a white
+  /// stroke around the bar, which is what [borderThickness] is for.
+  static const double _rimWidth = 1.5;
+  static const double _rimOpacity = 0.5;
 
   /// The glass panel, so its rect can be read back after layout.
   final GlobalKey _panelKey = GlobalKey();
@@ -250,7 +264,9 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
       ..setFloat(8, borderRadius.bottomRight.x * dpr)
       ..setFloat(9, borderRadius.bottomLeft.x * dpr)
       ..setFloat(10, _bandWidth * dpr)
-      ..setFloat(11, _refractionAmount * dpr);
+      ..setFloat(11, _refractionAmount * dpr)
+      ..setFloat(12, _rimWidth * dpr)
+      ..setFloat(13, _rimOpacity);
     return ImageFilter.shader(shader);
   }
 
@@ -307,7 +323,21 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _measurePanel());
     }
 
+    // The bar's one filter. Frosted is the blur it has always been; liquid
+    // composes the rim over it, so the shader's input is the blurred
+    // backdrop and its output is what the bar draws on. Composing rather
+    // than stacking a second BackdropFilter is what keeps the bar's own
+    // contents out of the refraction: the items, the tint and the border
+    // are this filter's child, so they are painted on the glass instead of
+    // being bent by it.
     final ImageFilter? refraction = _refraction(borderRadius);
+    final ImageFilter blur = ImageFilter.blur(
+      sigmaX: widget.backgroundBlur,
+      sigmaY: widget.backgroundBlur,
+    );
+    final ImageFilter filter = refraction == null
+        ? blur
+        : ImageFilter.compose(outer: refraction, inner: blur);
 
     return Padding(
       padding: widget.margin ?? widget.navbarType.defaultMargin,
@@ -334,10 +364,7 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
                     ),
                   ),
                 BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: widget.backgroundBlur,
-                    sigmaY: widget.backgroundBlur,
-                  ),
+                  filter: filter,
                   child: Container(
                     decoration: BoxDecoration(
                       color: widget.backgroundColor?.withValues(alpha: 0.1),
@@ -378,22 +405,6 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
                     ),
                   ),
                 ),
-                // The rim refraction, above the blur so that what it
-                // bends is already blurred, and positioned so it does not
-                // take part in the Stack's sizing. It covers the panel
-                // rather than the screen, because a bar handed to
-                // Scaffold.bottomNavigationBar has no way to paint outside
-                // its own box -- and it does not need to, since the bend
-                // samples inwards from the edge.
-                if (refraction != null)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: BackdropFilter(
-                        filter: refraction,
-                        child: const SizedBox.expand(),
-                      ),
-                    ),
-                  ),
               ],
             );
           },

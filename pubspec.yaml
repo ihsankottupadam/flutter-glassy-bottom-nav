@@ -18,6 +18,8 @@ screenshots:
     path: screenshots/bottom.png
   - description: 'A center-docked action button over the bar'
     path: screenshots/docked_button.png
+  - description: 'The liquid glass style, bending the artwork along the rim'
+    path: screenshots/liquid.png
 
 environment:
   # withValues and Color.a, used for the glass tint, arrived in Flutter 3.27.

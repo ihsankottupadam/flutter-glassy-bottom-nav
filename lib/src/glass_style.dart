@@ -19,6 +19,13 @@ enum GlassStyle {
   /// available everywhere — notably not on the web. Asking for it where it
   /// cannot run is not an error: it resolves to [frosted], which is what
   /// [GlassStyleResolution.resolved] reports and what the bar then draws.
+  ///
+  /// The rim has no settings of its own. What it bends is the blurred
+  /// backdrop, so `backgroundBlur` is the control over how it reads: a low
+  /// sigma leaves the bent content recognisable through the edge, and a high
+  /// one softens the rim into a bevel. The bar's own contents are painted on
+  /// the glass rather than through it, so icons, labels and the border stay
+  /// crisp whatever the backdrop does.
   liquid,
 }
 
