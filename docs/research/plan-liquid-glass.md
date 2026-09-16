@@ -78,3 +78,52 @@ with a full-screen shader above it — is what makes the masking correct.
 - `real_liquid_glass` 0.3.0 hosts Apple's `UIGlassEffect` in a platform
   view. Genuinely better on iOS 26+, and it requires building with
   Xcode 26+ and an iOS half this package does not have.
+
+
+## Phase 3, verified 2026-09-16 on a headless emulator
+
+Checked on a Pixel 9 Pro AVD booted `-no-window` (1280x2856, dpr 3.0),
+Impeller on the OpenGLES backend through ANGLE/SwiftShader. Headless because
+both real devices on this machine were in use by other sessions; software
+rendering is fine for *where* the refraction lands, and says nothing about
+what it costs.
+
+### The coordinate space, which the probe did not settle
+
+The probe filtered the whole screen, where a filter-local coordinate and a
+screen coordinate are the same number, so it could not tell which one
+`FlutterFragCoord()` reports. Inside the bar's own box they differ, and the
+answer is **screen space**: the panel's global rect, in device pixels, is
+what the shader must be given.
+
+Measured rather than assumed. Differencing a frosted frame against a liquid
+one shows changed pixels beginning at x = 56, against a bar whose left edge
+is at `margin 16 x dpr 3 = 48` — the first few columns being where the ramp
+is still near zero.
+
+### The band traces the shape
+
+The difference map of `GlassyNavbarType.centered` is the pill's rim and
+nothing else: both long edges, both rounded caps at the right radius, and a
+black interior. The black interior is the early-out — pixels deeper than the
+band really do cost one texture read.
+
+`GlassyNavbarType.bottom` differs the way it should: the band follows the
+top edge, curves at the two top corners, runs straight down the sides and
+does not round at the bottom. That is the four-radii uniform doing its job;
+one radius would have bent a curve into the two bottom corners, which are
+square.
+
+Both were checked with a non-zero `MediaQuery.padding` — the emulator's
+gesture bar — and with the example's centre-docked button over the bar.
+
+### Found while checking: the bar refracts its own border
+
+The bright line along each edge in the difference maps is the panel's own
+border, which `GlassyBottomNav` draws in the decoration *underneath* the
+refraction layer, so the rim bends it along with the backdrop. Apple's glass
+does the opposite: the rim highlight sits on top of the refraction, crisp.
+
+Not a defect in the anchoring, and not fixed here — it belongs with Phase
+4's specular rim, which has to decide what is drawn above the refraction
+anyway. Worth knowing before that phase starts rather than rediscovering it.
