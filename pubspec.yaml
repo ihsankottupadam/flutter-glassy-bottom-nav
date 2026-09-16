@@ -1,6 +1,6 @@
 name: glassy_bottom_nav
 description: A frosted-glass bottom navigation bar with an animated selection indicator, per-item active colours and two layouts.
-version: 1.1.0
+version: 1.1.1
 homepage: https://github.com/ihsankottupadam/flutter-glassy-bottom-nav
 repository: https://github.com/ihsankottupadam/flutter-glassy-bottom-nav
 issue_tracker: https://github.com/ihsankottupadam/flutter-glassy-bottom-nav/issues

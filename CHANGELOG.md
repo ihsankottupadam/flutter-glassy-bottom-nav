@@ -1,3 +1,7 @@
+## 1.1.1
+
+* Documentation only, with no change to the package's behaviour
+
 ## 1.1.0
 
 * `glassStyle` adds `GlassStyle.liquid`, which keeps the frosted blur and
