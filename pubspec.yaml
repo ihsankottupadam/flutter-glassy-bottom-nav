@@ -39,6 +39,13 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
 
+  # The rim refraction of GlassStyle.liquid. The path here is also half the
+  # runtime asset key: FragmentProgram.fromAsset wants it prefixed with
+  # `packages/glassy_bottom_nav/`, with the `lib/` kept rather than implied
+  # as it is for an ordinary package asset.
+  shaders:
+    - lib/src/shaders/liquid_glass.frag
+
   # To add assets to your package, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
