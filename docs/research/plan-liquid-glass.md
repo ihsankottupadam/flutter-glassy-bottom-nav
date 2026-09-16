@@ -127,3 +127,77 @@ does the opposite: the rim highlight sits on top of the refraction, crisp.
 Not a defect in the anchoring, and not fixed here — it belongs with Phase
 4's specular rim, which has to decide what is drawn above the refraction
 anyway. Worth knowing before that phase starts rather than rediscovering it.
+
+
+## Phase 4, the look, tuned 2026-09-16 on the same headless emulator
+
+Same Pixel 9 Pro AVD, `-no-window`, Impeller on OpenGLES through
+ANGLE/SwiftShader. Software rendering says nothing about cost, but it
+renders the right pixels, which is all the look needs. Every frame below is
+the example's **Favorites** tab, whose grid of large gradient tiles is the
+only place in the example with real contrast directly behind the bar — the
+Discover tab's backdrop there is near-flat dark, where the refraction is
+invisible whatever it is set to, and tuning against it would have been
+tuning against nothing.
+
+### What a layer above the blur costs: the bar's own contents
+
+The first device look at Phase 3's output showed the selection marker
+**gone**. It sits about 8 logical px below the bar's top edge, inside a 14px
+rim band, so the refraction displaced it past the edge and replaced it with
+what was deeper in. The border was refracted into a second ghost outline
+inside the real one, the finding left open at the end of Phase 3.
+
+`ImageFilter.compose(outer: shader, inner: blur)` on the bar's existing
+`BackdropFilter` fixes both at once, and it is what ships. Marker, icons,
+labels and border are the filter's child and stay crisp; only the backdrop
+bends. The plan's `## Declined` entry against `compose` was measured with a
+full-screen inner blur and does not apply to a blur already clipped to the
+panel.
+
+### The direction of the bend
+
+Sampling *outward* — `frag + d * normal`, the physically right direction for
+a glass bevel, pulling the surroundings in — genuinely works: the `4:21`
+beside the bar becomes legible as `5:21` squeezed into the rim. It also
+fringes: the sample leaves the filter's input, which stops at the
+`ClipRRect`, and a green halo spills past the outline. Inward it is, so the
+rim magnifies the interior rather than squeezing in the exterior. A filter
+wider than the bar would be needed for the real thing, and a widget in
+`Scaffold.bottomNavigationBar` has no way to paint outside its own box.
+
+### Band, amount and rim
+
+Six builds, judged side by side over the same artwork, band and amount in
+logical px:
+
+| variant | band | amount | rim w/opacity | reads as |
+|---|---|---|---|---|
+| A | 14 | 12 | 1.5 / 0.5 | inflated; the caps pillow out |
+| **B** | **12** | **8** | **1.5 / 0.5** | **shipped** — a bevel, with the tile boundary visibly pinched at the rim |
+| C | 10 | 5 | 1.5 / 0.5 | near-indistinguishable from frosted |
+| F | 12 | 8 | 2.5 / 0.8 | a chunky white stroke, not light on an edge |
+| G | 12 | 8 | 1.0 / 0.3 | rim all but absent |
+| E | 14 | 12 | 1.5 / 0.5, outward | see above; fringes past the clip |
+
+The band is clamped in the shader to half the bar's shortest half-axis so a
+short bar narrows its rim rather than having the two bevels meet in the
+middle, and the travel shrinks with it.
+
+### Whether the rim needs the blur moved into the shader
+
+No, and the evidence is one pair of frames. Dropping the example's
+`backgroundBlur` from 22 to 6 and changing nothing else makes the rim bend
+recognisable content and reads markedly closer to iOS; at 22 the same rim is
+a plain soft bevel. So rim sharpness tracks `backgroundBlur`, which is the
+caller's knob, and the package's default of 10 sits at the sharp end. The
+in-shader blur stays in reserve for the one case the two layers cannot
+serve: a caller who wants a heavy blur *and* a crisp rim.
+
+### Why no new parameters
+
+Band, amount, rim width and rim opacity are all kept private. They were
+tuned as a set and only read as glass in combination — F and G above are
+each one knob away from B and each looks wrong. The knob that genuinely
+changes how the rim reads is `backgroundBlur`, which already exists. Adding
+a parameter in 1.2.0 is not a breaking change; removing one is.
