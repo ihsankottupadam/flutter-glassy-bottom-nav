@@ -1,5 +1,5 @@
-A frosted-glass bottom navigation bar, with an animated selection indicator,
-per-item active colours and two layouts.
+A glass bottom navigation bar, frosted or liquid, with an animated selection
+indicator, per-item active colours and two layouts.
 
 <table>
   <tr>
@@ -14,9 +14,20 @@ per-item active colours and two layouts.
   </tr>
 </table>
 
+<table>
+  <tr>
+    <td align="center"><img src="https://raw.githubusercontent.com/ihsankottupadam/flutter-glassy-bottom-nav/main/screenshots/liquid.png" width="250" alt="The liquid glass style, bending the artwork behind the bar along its rim"></td>
+  </tr>
+  <tr>
+    <td align="center"><code>GlassStyle.liquid</code><br>the rim bends what is behind it</td>
+  </tr>
+</table>
+
 ## Features
 
 * Frosted glass — blurs whatever scrolls behind it, with a configurable sigma
+* Liquid glass — the same blur, with the rim refracting the backdrop and
+  catching light, falling back to frosted where it cannot run
 * Animated background indicator that slides to the selected item
 * Animated marker above the selected icon
 * Per-item active colour, tinting both the indicator and the marker
@@ -107,6 +118,53 @@ GlassyBottomNav(
 )
 ```
 
+## Glass styles
+
+`glassStyle` picks how the bar treats what is behind it.
+`GlassStyle.frosted` is the default and the blur the bar has always drawn.
+`GlassStyle.liquid` keeps that blur and bends the backdrop along the bar's
+edge, with a lit rim:
+
+```dart
+GlassyBottomNav(
+  glassStyle: GlassStyle.liquid,
+  items: items,
+)
+```
+
+That is the whole API. There is nothing to await, no capability to check and
+no second widget to swap in.
+
+**It needs Impeller.** The refraction is a fragment shader, and
+`ui.ImageFilter.shader` only exists on Impeller — so not on the web, and not
+in a build still running Skia. Asking for `liquid` there is not an error and
+does not throw: the bar resolves it to `frosted` and draws that instead. The
+fallback is not something you arrange, it is what this package already
+draws, so `glassStyle: GlassStyle.liquid` is safe to write unconditionally
+in an app that also ships to the web.
+
+To find out which one you will get before building a bar — to word a
+settings screen, say — ask the style itself:
+
+```dart
+if (GlassStyle.liquid.resolved == GlassStyle.liquid) {
+  // The shader will run here.
+}
+```
+
+Two things worth knowing about how it looks:
+
+* **`backgroundBlur` is the control over the rim.** What the rim bends is
+  the blurred backdrop, so a low sigma leaves the bent content recognisable
+  through the edge and a high one softens the rim into a plain bevel. The
+  default of `10` sits at the sharp end.
+* **The bar's own contents are painted on the glass, not through it.** Icons,
+  labels, the marker and the border stay crisp whatever the backdrop is
+  doing.
+
+The rim has no settings of its own. Band width, refraction distance and the
+highlight were tuned as a set and only read as glass in combination.
+
 ## Styling the glass
 
 ```dart
@@ -133,6 +191,7 @@ GlassyBottomNav(
 | `currentIndex` | `null` | Set it to drive the selection from outside |
 | `onChange` | `null` | Called with the new index when a different item is tapped |
 | `navbarType` | `centered` | Floating pill, or docked to the bottom edge |
+| `glassStyle` | `frosted` | `liquid` refracts the rim where Impeller can run it |
 | `showBackgroundIndicator` | `true` | Tinted panel behind the selected item |
 | `backgroundBlur` | `10` | Blur sigma applied to the backdrop |
 | `backgroundColor` | `null` | Tints the glass, at 10% opacity |
