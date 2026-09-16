@@ -21,7 +21,7 @@
 // launches, and a single mean over 600 frames hides both.
 //
 // Throwaway, like `probe_main.dart`: it is committed so the numbers in
-// `docs/research/plan-liquid-glass.md` can be reproduced, not because the
+// `doc/research/plan-liquid-glass.md` can be reproduced, not because the
 // package needs it.
 
 import 'dart:math' as math;
