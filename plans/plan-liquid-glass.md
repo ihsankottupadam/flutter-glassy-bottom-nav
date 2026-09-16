@@ -76,6 +76,26 @@ style belongs here rather than in a package that would have to invent one.
   prism fringe at the rim. Cheap to add later behind a flag; not in the
   first cut.
 
+**Held in reserve, not declined: moving the blur into the shader.** The two
+layers blur first and refract second, so the rim bends content that is
+already blurred. Both reference implementations do it that way — the filter
+shader in `liquid_glass_renderer` takes its input as `uBlurredTexture`, and
+`fluid_glass`'s `lens()` describes itself as following "a preceding blur" —
+so it is the established order and it is what the first cut builds.
+
+It is not quite what Apple draws. iOS's rim carries a brighter, sharper band
+that reads as recognisable content seen through thick glass, which a rim
+sampling only blurred pixels cannot produce. If Phase 4's tuning leaves the
+edge looking mushy rather than glassy, that is the cause, and the fix is a
+single pass that does both: the shader blurs the interior with its own
+multi-tap and samples sharper content at the rim, instead of receiving a
+blurred texture. It costs more than the current early-out and the
+measurements say there is headroom for it.
+
+Not built speculatively — the cheaper ingredients (band, amount, the
+specular highlight) may be enough, and this is the thing to reach for if
+they are not.
+
 ## What the tests hold
 
 `flutter_test` runs on Skia, where `ui.ImageFilter.shader` throws rather
@@ -145,6 +165,9 @@ suite. What can be pinned, and is worth more:
   a distortion rather than as an edge catching light.
 - [ ] Expose whichever of those the caller needs and no more, defaulting to
   the tuned values, and say in the dartdoc what each does.
+- [ ] Judge the rim against iOS's own glass once band, amount and the
+  highlight are tuned, and record in this plan's `## Declined` whether the
+  in-shader blur held in reserve there is needed or the two layers suffice.
 - [ ] Add a `screenshots/liquid.png` showing the style over the example's
   artwork, and list it in `pubspec.yaml`'s `screenshots:`.
 
