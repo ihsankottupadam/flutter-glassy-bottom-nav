@@ -176,14 +176,27 @@ class _PlainBar extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              for (final GlassyBottomNavItem item in _items)
+              for (final (int index, GlassyBottomNavItem item)
+                  in _items.indexed)
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      const SizedBox(height: 13),
+                      // The same spacing the real item view uses, so this
+                      // bar is the same height as the two glass ones. A
+                      // shorter bar would clip and filter a smaller area
+                      // and quietly flatter the floor.
+                      SizedBox(height: index == 0 ? 3 : 0),
+                      const SizedBox(height: 10),
                       item.icon,
-                      const SizedBox(height: 13),
+                      const SizedBox(height: 5),
+                      if (index == 0)
+                        const Text(
+                          'Home',
+                          maxLines: 1,
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
