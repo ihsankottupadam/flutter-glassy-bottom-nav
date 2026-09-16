@@ -1,7 +1,9 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'glass_style.dart';
 import 'glassy_bottom_nav_item.dart';
 import 'glassy_navbar_type.dart';
 
@@ -104,6 +106,14 @@ class GlassyBottomNav extends StatefulWidget {
   /// Whether the bar is docked to the bottom edge or floats as a pill.
   final GlassyNavbarType navbarType;
 
+  /// How the bar treats what is painted behind it.
+  ///
+  /// Defaults to [GlassStyle.frosted], the blur the bar has always drawn.
+  /// [GlassStyle.liquid] keeps that blur and bends the backdrop along the
+  /// bar's edge; where its shader cannot run it falls back to
+  /// [GlassStyle.frosted], so it is safe to ask for unconditionally.
+  final GlassStyle glassStyle;
+
   /// The size of the marker drawn above the selected item's icon.
   ///
   /// The marker animates from zero width to [Size.width] on selection.
@@ -132,6 +142,7 @@ class GlassyBottomNav extends StatefulWidget {
     this.labelStyle,
     this.selectedLabelStyle,
     this.navbarType = GlassyNavbarType.centered,
+    this.glassStyle = GlassStyle.frosted,
     this.markerSize = const Size(20, 3),
     this.duration = const Duration(milliseconds: 150),
   });
@@ -159,10 +170,34 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
   int get _currentIndex =>
       (widget.currentIndex ?? _internalIndex).clamp(0, widget.items.length - 1);
 
+  /// The style actually drawn, which is [GlassStyle.frosted] whenever the
+  /// backend cannot run [GlassStyle.liquid]'s shader.
+  ///
+  /// Everything that draws differently per style reads this rather than
+  /// `widget.glassStyle`, so the fallback is decided in one place.
+  GlassStyle get _resolvedStyle => widget.glassStyle.resolved;
+
   /// The colour that tints an item's marker, and the indicator while that
   /// item is selected.
   Color _activeColorOf(GlassyBottomNavItem item) =>
       item.activeColor ?? Theme.of(context).colorScheme.secondary;
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(EnumProperty<GlassStyle>('glassStyle', widget.glassStyle));
+    // Worth reporting separately only when the two differ, which is the
+    // case the inspector cannot otherwise show: a bar asked for
+    // GlassStyle.liquid on a backend that cannot draw it looks like a bar
+    // that was asked for GlassStyle.frosted.
+    properties.add(
+      EnumProperty<GlassStyle>(
+        'resolvedStyle',
+        _resolvedStyle,
+        defaultValue: widget.glassStyle,
+      ),
+    );
+  }
 
   void _onTap(int index) {
     if (_currentIndex == index) return;
