@@ -270,6 +270,26 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
     return ImageFilter.shader(shader);
   }
 
+  /// The space around the bar, with the display's bottom inset respected.
+  ///
+  /// [GlassyNavbarType.bottom] defaults to no margin at all, and a [Scaffold]
+  /// does not inset `bottomNavigationBar` for you -- Material's own
+  /// [BottomNavigationBar] adds the inset itself. Without this the docked
+  /// bar's labels sit inside the home-indicator zone.
+  ///
+  /// [GlassyNavbarType.centered] already floats clear of a 20px inset, so it
+  /// only grows when the display asks for more than it was already leaving.
+  ///
+  /// A caller who passes [GlassyBottomNav.margin] gets exactly that and
+  /// nothing added: the whole point of the parameter is to take control, and
+  /// silently growing it would leave no way to sit in the inset on purpose.
+  EdgeInsets get _margin {
+    if (widget.margin != null) return widget.margin!;
+    final EdgeInsets margin = widget.navbarType.defaultMargin;
+    final double inset = MediaQuery.paddingOf(context).bottom;
+    return inset > margin.bottom ? margin.copyWith(bottom: inset) : margin;
+  }
+
   /// The colour that tints an item's marker, and the indicator while that
   /// item is selected.
   Color _activeColorOf(GlassyBottomNavItem item) =>
@@ -340,7 +360,7 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
         : ImageFilter.compose(outer: refraction, inner: blur);
 
     return Padding(
-      padding: widget.margin ?? widget.navbarType.defaultMargin,
+      padding: _margin,
       child: ClipRRect(
         borderRadius: borderRadius,
         child: LayoutBuilder(
@@ -350,8 +370,11 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
               key: _panelKey,
               children: [
                 if (widget.showBackgroundIndicator)
-                  AnimatedPositioned(
-                    left: itemWidth * _currentIndex,
+                  // Directional so the indicator mirrors with the Row it
+                  // sits behind. Positioned from the left would leave the
+                  // highlight on the wrong item under TextDirection.rtl.
+                  AnimatedPositionedDirectional(
+                    start: itemWidth * _currentIndex,
                     width: itemWidth,
                     top: 0,
                     bottom: 0,
@@ -381,22 +404,39 @@ class _GlassyBottomNavState extends State<GlassyBottomNav> {
                       children: [
                         for (final (index, item) in widget.items.indexed)
                           Expanded(
-                            child: Tooltip(
-                              message: item.label,
-                              child: GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => _onTap(index),
-                                child: _GlassyBottomNavItemView(
-                                  item: item,
-                                  isSelected: index == _currentIndex,
-                                  activeColor: _activeColorOf(item),
-                                  showSelectedLabel: widget.showSelectedLabel,
-                                  showUnselectedLabel:
-                                      widget.showUnselectedLabel,
-                                  labelStyle: widget.labelStyle,
-                                  selectedLabelStyle: widget.selectedLabelStyle,
-                                  markerSize: widget.markerSize,
-                                  animationDuration: widget.duration,
+                            // One node per destination, announced as a
+                            // button that is one of a set and either
+                            // selected or not. excludeSemantics drops what
+                            // is underneath -- the Tooltip's message and the
+                            // label's own Text -- which would otherwise have
+                            // the label read two or three times over; the
+                            // tap action moves up here with it, so the item
+                            // stays activatable from a screen reader.
+                            child: Semantics(
+                              label: item.label,
+                              button: true,
+                              selected: index == _currentIndex,
+                              inMutuallyExclusiveGroup: true,
+                              excludeSemantics: true,
+                              onTap: () => _onTap(index),
+                              child: Tooltip(
+                                message: item.label,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => _onTap(index),
+                                  child: _GlassyBottomNavItemView(
+                                    item: item,
+                                    isSelected: index == _currentIndex,
+                                    activeColor: _activeColorOf(item),
+                                    showSelectedLabel: widget.showSelectedLabel,
+                                    showUnselectedLabel:
+                                        widget.showUnselectedLabel,
+                                    labelStyle: widget.labelStyle,
+                                    selectedLabelStyle:
+                                        widget.selectedLabelStyle,
+                                    markerSize: widget.markerSize,
+                                    animationDuration: widget.duration,
+                                  ),
                                 ),
                               ),
                             ),

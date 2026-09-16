@@ -48,7 +48,11 @@ void main() {
           items.length;
 
       expect(
-        tester.widget<AnimatedPositioned>(find.byType(AnimatedPositioned)).left,
+        tester
+            .widget<AnimatedPositionedDirectional>(
+              find.byType(AnimatedPositionedDirectional),
+            )
+            .start,
         0,
       );
 
@@ -56,7 +60,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        tester.widget<AnimatedPositioned>(find.byType(AnimatedPositioned)).left,
+        tester
+            .widget<AnimatedPositionedDirectional>(
+              find.byType(AnimatedPositionedDirectional),
+            )
+            .start,
         moreOrLessEquals(itemWidth * 2),
       );
     });
@@ -68,7 +76,7 @@ void main() {
         const GlassyBottomNav(items: items, showBackgroundIndicator: false),
       );
 
-      expect(find.byType(AnimatedPositioned), findsNothing);
+      expect(find.byType(AnimatedPositionedDirectional), findsNothing);
     });
   });
 
@@ -223,7 +231,9 @@ void main() {
 
     expect(
       tester
-          .widget<AnimatedPositioned>(find.byType(AnimatedPositioned))
+          .widget<AnimatedPositionedDirectional>(
+            find.byType(AnimatedPositionedDirectional),
+          )
           .duration,
       const Duration(milliseconds: 400),
     );

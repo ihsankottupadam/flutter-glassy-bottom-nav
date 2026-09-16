@@ -10,6 +10,19 @@
   unconditionally
 * `GlassStyle.resolved` reports which of the two a bar will actually draw here
 
+### Fixed
+
+* `GlassyNavbarType.bottom` no longer draws its labels inside the
+  home-indicator zone. The bar takes the display's bottom inset into account,
+  and `GlassyNavbarType.centered` grows past its own 20px margin when a
+  display asks for more. An explicit `margin` is still used exactly as given
+* The background indicator is positioned directionally, so under
+  `TextDirection.rtl` it highlights the selected item instead of its mirror
+  image
+* Each destination is now one semantics node, announced as a selected or
+  unselected button in a mutually exclusive group, and activatable from a
+  screen reader. The label is no longer read more than once
+
 ## 1.0.0
 
 * Initial release of `GlassyBottomNav`, a frosted-glass bottom navigation bar

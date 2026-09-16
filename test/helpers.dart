@@ -39,9 +39,22 @@ IconData unselectedIconOf(int index) => (items[index].icon as Icon).icon!;
 
 extension PumpNav on WidgetTester {
   /// Pumps [nav] as the bottom bar of a plain dark-themed app.
-  Future<void> pumpNav(GlassyBottomNav nav) => pumpWidget(
+  ///
+  /// [padding] stands in for a display's safe-area insets and
+  /// [textDirection] for a right-to-left locale; both default to the plain
+  /// case so existing tests read the same as before.
+  Future<void> pumpNav(
+    GlassyBottomNav nav, {
+    EdgeInsets padding = EdgeInsets.zero,
+    TextDirection textDirection = TextDirection.ltr,
+  }) =>
+      pumpWidget(
         MaterialApp(
           theme: ThemeData(brightness: Brightness.dark),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(padding: padding),
+            child: Directionality(textDirection: textDirection, child: child!),
+          ),
           home: Scaffold(extendBody: true, bottomNavigationBar: nav),
         ),
       );

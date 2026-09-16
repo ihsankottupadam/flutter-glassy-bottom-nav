@@ -11,8 +11,7 @@ import 'helpers.dart';
 /// the bar. Structural rather than visual — what it pins is that a bar
 /// built one way produces the same tree as a bar built another, which is
 /// the claim that the style parameter is additive.
-List<Type> _pumpedTree(WidgetTester tester) => tester
-    .allWidgets
+List<Type> _pumpedTree(WidgetTester tester) => tester.allWidgets
     .map((widget) => widget.runtimeType)
     .toList(growable: false);
 
