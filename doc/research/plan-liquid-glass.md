@@ -34,29 +34,73 @@ and which "dropping the refraction does nothing about".
 
 ## What it costs
 
-Rolling mean of 60 frames' raster time, animated backdrop repainting every
-frame, one app launch per mode, slider values verified unchanged at
-18 / 22 / 22 in all four captures.
+Measured 2026-09-17 on a **Redmi 13 5G** (`2406ERN9CI`, Snapdragon 4 Gen 2
+`SM4450`, Android 16), a `--profile` build, 1080x2460 at dpr 2.75. The panel
+goes to 120 Hz but ran the whole time at **60 Hz** — `renderFrameRate
+60.000004`, SurfaceFlinger `activeMode ... vsyncRate=60.00 Hz` — so 16.67 ms
+is the right budget and the jank column below counts against it.
 
-| mode | raster | what it is |
-| --- | --- | --- |
-| none | 0.42 ms | floor: no filter at all |
-| blur | 0.70 ms | bar-sized clipped blur — what ships today |
-| liquid | 0.44 ms | full-screen refraction shader, no blur |
-| stacked | 0.66 ms | both: today's blur with the shader above it |
+A deliberately low-end phone. The prototype's numbers came off a Mac GPU and
+said nothing about where this actually hurts.
 
-- The refraction is not the expensive part; the blur is. The shader alone
-  costs +0.02 ms over an unfiltered frame, the blur alone +0.28 ms. The
-  early-out is doing its job.
-- Stacking the shader onto the blur is free within noise. `stacked` came
-  out *below* `blur`, which cannot be real — so run-to-run variance is at
-  least ±0.05 ms and the shader's true added cost is inside it.
+One run, four modes, three rounds of them, 4 batches of 120 frames each —
+48 batches, 12 per mode. The app cycles the modes itself so they interleave
+by construction; the phone moved only 37.0 → 38.0 °C across the run, so no
+mode paid for another's heat.
 
-**What these numbers are not.** n=1 per mode, debug build, macOS, an
-800x632 window on a Mac GPU. They establish the shape of the cost, not its
-magnitude on a phone. Phase 5 replaces them.
+| mode | mean | sd | p90 | frames over 16.67 ms | what it is |
+| --- | --- | --- | --- | --- | --- |
+| none | 7.19 ms | 3.50 | 8.70 ms | 0.2% | floor: the bar, no filter |
+| frosted | 17.03 ms | 0.43 | 18.49 ms | 58.0% | the blur — what 1.0.0 ships |
+| shader | 8.59 ms | 3.64 | 10.72 ms | 5.0% | the rim, blur sigma 0 |
+| liquid | 19.89 ms | 0.27 | 21.16 ms | 99.9% | both, composed — what ships |
+
+- **blur over the floor: +9.84 ms**
+- **rim over the floor, no blur: +1.39 ms**
+- **rim on top of the blur: +2.86 ms**, 17% on top of frosted
+
+Three things follow.
+
+**The blur is the expensive part, not the refraction.** That is what the
+macOS prototype claimed and it survives contact with a budget phone: the rim
+on its own costs a seventh of what the blur costs. The early-out is doing
+its job — most of the bar's pixels are one texture read.
+
+**The rim costs about twice as much composed as it does alone** (+2.86 vs
++1.39). Same shader, same pixels; what changed is that the composed pass
+reads a blurred intermediate rather than the backdrop directly. That is
+bandwidth, not arithmetic, and it is the thing to attack if the rim ever
+needs to be cheaper — one pass that blurs and refracts together would not
+pay it. Which is a second, independent argument for the in-shader blur the
+plan holds in reserve, alongside the sharpness one.
+
+**The cheap modes' means are noisy and overstated.** `none` and `shader`
+have sd ≈ 3.5 against 0.3–0.4 for the two heavy modes, and `none` ranged
+2.38 → 10.84 ms across rounds. That is the GPU governor clocking down when
+there is slack, not the work varying: their *minima* (2.38 and 4.76 ms) are
+the better estimate of what they actually cost. The heavy modes are
+saturated, which is why they are stable.
+
+**What these numbers are not.** They are the worst case, by construction:
+a full-screen backdrop repainting every frame, so the filter can never be
+cached and re-runs in full every time. An app whose content behind the bar
+is still — most apps, most of the time — lets the raster cache keep the
+filtered layer, and pays none of this until something scrolls. Read the
+table as the ceiling, not the typical frame.
+
+Worth saying plainly, because it reframes the decision below: **frosted
+already misses the frame budget 58% of the time on this phone.** That is
+the style the package has shipped since 1.0.0, under a fully animated
+backdrop. Liquid makes a bar that was already marginal here miss nearly
+every frame, but it did not create the problem.
 
 ## Negative result: the two filters cannot be composed
+
+> **Overturned in Phase 4, and `compose` is what ships.** This was measured
+> against a *full-screen* inner blur, which is what the paragraph below
+> describes. The bar's blur is clipped to the panel by its `ClipRRect`, and
+> composed there it behaves correctly. The finding stands for the case it
+> was taken in; it was answering a different question.
 
 `ui.ImageFilter.compose(outer: shader, inner: blur)` does not work for this.
 The blur would be the inner stage of a full-screen filter, so it blurs the
